@@ -29,3 +29,10 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+      - name: Run ResilienceGate CLI
+        run: |
+          python -m resilience_gate.cli \
+            --baseline sample_data/metrics_normal.json \
+            --current sample_data/metrics_incident.json
+        continue-on-error: true
