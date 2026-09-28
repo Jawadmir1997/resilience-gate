@@ -1,22 +1,44 @@
-"""OSV vulnerability lookup interface for ResilienceGate.
+"""OSV vulnerability lookup for ResilienceGate dependencies."""
 
-This module defines the supply-chain security interface used to evaluate
-declared software dependencies against known vulnerability information.
-"""
+import requests
 
-from resilience_gate.models import DependencyFinding
+from resilience_gate.models import DependencyFinding, Severity
 
-
-def check_dependency(
-    package: str,
-    version: str,
-) -> list[DependencyFinding]:
-    """Check one package version for known vulnerability findings."""
-    raise NotImplementedError
+OSV_QUERY_URL = "https://api.osv.dev/v1/query"
 
 
-def check_dependencies(
-    dependencies: list[tuple[str, str]],
-) -> list[DependencyFinding]:
-    """Check multiple package dependencies and return combined findings."""
-    raise NotImplementedError
+def query_osv(package: str, version: str) -> list[DependencyFinding]:
+    """Query OSV for known vulnerabilities affecting a Python package."""
+    payload = {
+        "package": {
+            "name": package,
+            "ecosystem": "PyPI",
+        },
+        "version": version,
+    }
+
+    response = requests.post(OSV_QUERY_URL, json=payload, timeout=10)
+    response.raise_for_status()
+
+    data = response.json()
+    findings = []
+
+    for vulnerability in data.get("vulns", []):
+        findings.append(
+            DependencyFinding(
+                package=package,
+                version=version,
+                vulnerability_id=vulnerability.get("id", "UNKNOWN"),
+                severity=Severity.MEDIUM,
+                summary=vulnerability.get(
+                    "summary",
+                    "Known vulnerability reported by OSV.",
+                ),
+                explanation=(
+                    f"OSV reported {vulnerability.get('id', 'UNKNOWN')} "
+                    f"for {package} {version}."
+                ),
+            )
+        )
+
+    return findings
