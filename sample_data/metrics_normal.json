@@ -1,0 +1,37 @@
+[
+  {
+    "timestamp": "2026-09-28T10:00:00",
+    "service": "checkout",
+    "metric": "latency_ms",
+    "value": 118.0,
+    "unit": "ms"
+  },
+  {
+    "timestamp": "2026-09-28T10:01:00",
+    "service": "checkout",
+    "metric": "latency_ms",
+    "value": 121.0,
+    "unit": "ms"
+  },
+  {
+    "timestamp": "2026-09-28T10:02:00",
+    "service": "checkout",
+    "metric": "latency_ms",
+    "value": 119.0,
+    "unit": "ms"
+  },
+  {
+    "timestamp": "2026-09-28T10:03:00",
+    "service": "checkout",
+    "metric": "latency_ms",
+    "value": 123.0,
+    "unit": "ms"
+  },
+  {
+    "timestamp": "2026-09-28T10:04:00",
+    "service": "checkout",
+    "metric": "latency_ms",
+    "value": 120.0,
+    "unit": "ms"
+  }
+]
