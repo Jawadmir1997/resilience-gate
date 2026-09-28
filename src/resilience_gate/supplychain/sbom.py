@@ -1,16 +1,20 @@
-"""SBOM handling interface for ResilienceGate.
+"""SBOM parsing utilities for ResilienceGate."""
 
-This module defines how software dependency information can be extracted
-from a CycloneDX Software Bill of Materials and normalized for downstream
-supply-chain vulnerability analysis.
-"""
+import json
 
 
-def load_sbom(path: str) -> list[tuple[str, str]]:
-    """Load package names and versions from a CycloneDX SBOM file."""
-    raise NotImplementedError
+def load_cyclonedx(path: str) -> list[tuple[str, str]]:
+    """Load package names and versions from a CycloneDX JSON SBOM."""
+    with open(path, "r", encoding="utf-8") as file:
+        sbom = json.load(file)
 
+    dependencies = []
 
-def normalize_components(components: list[dict]) -> list[tuple[str, str]]:
-    """Normalize SBOM components into package and version pairs."""
-    raise NotImplementedError
+    for component in sbom.get("components", []):
+        name = component.get("name")
+        version = component.get("version")
+
+        if name and version:
+            dependencies.append((str(name), str(version)))
+
+    return dependencies
