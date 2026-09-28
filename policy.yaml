@@ -1,0 +1,30 @@
+version: "0.1"
+
+gate:
+  default_decision: allow
+
+operational_resilience:
+  anomaly_thresholds:
+    medium: 2.0
+    high: 3.0
+    critical: 4.0
+
+supply_chain:
+  vulnerability_policy:
+    low: allow
+    medium: warn
+    high: block
+    critical: block
+
+decision_rules:
+  - name: critical_operational_anomaly
+    condition: critical_anomaly_detected
+    decision: block
+
+  - name: high_risk_dependency
+    condition: high_or_critical_vulnerability_detected
+    decision: block
+
+  - name: medium_risk_signal
+    condition: medium_risk_detected
+    decision: warn
