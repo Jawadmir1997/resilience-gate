@@ -54,3 +54,33 @@ flowchart LR
     K --> L["Human-readable<br/>justification"]
     L --> M["Exit code<br/>+ HTML report"]
 ```
+
+## 3. Deployment Gate Sequence
+
+```mermaid
+sequenceDiagram
+    participant CI as CI pipeline
+    participant RG as ResilienceGate
+    participant TS as Telemetry store
+    participant OSV as OSV database
+    participant Op as Operator
+
+    CI->>RG: rg gate --service checkout --sbom sbom.json
+    RG->>TS: fetch recent metrics for target service
+    TS-->>RG: time-series window
+    RG->>RG: score deviation against rolling baseline
+    RG->>OSV: resolve declared dependencies
+    OSV-->>RG: known vulnerabilities + severities
+    RG->>RG: evaluate policy across both signal sets
+
+    alt All rules pass
+        RG-->>CI: ALLOW (exit 0)
+        CI->>CI: deployment proceeds
+    else Any rule blocks
+        RG-->>CI: BLOCK (exit 1) + justification
+        CI->>Op: surface every rule that fired, with reasons
+        Op->>Op: remediate, or record an explicit policy exception
+    end
+```
+
+The operator branch is deliberate. The system refuses a deployment and explains itself; it does not act unilaterally without recourse. This is the human-oversight boundary described in the XR-ACD framework.
