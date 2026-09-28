@@ -34,3 +34,23 @@ flowchart TB
 ```
 
 The two layers are independent up to the policy engine and converge at a single decision point. That convergence is the design claim: neither operational state nor artifact integrity is sufficient alone.
+
+## 2. Data Flow
+
+```mermaid
+flowchart LR
+    A["Raw metrics<br/>JSON / CSV"] --> B["MetricPoint<br/>normalized"]
+    B --> C[("SQLite")]
+    C --> D["Rolling baseline<br/>per service+metric"]
+    D --> E["Anomaly<br/>score 0-1 + severity"]
+
+    F["requirements.txt"] --> G["CycloneDX SBOM"]
+    G --> H["OSV query<br/>cached"]
+    H --> I["DependencyFinding<br/>CVE + severity"]
+
+    E --> J["Policy evaluation"]
+    I --> J
+    J --> K["GateDecision<br/>+ rules fired"]
+    K --> L["Human-readable<br/>justification"]
+    L --> M["Exit code<br/>+ HTML report"]
+```
