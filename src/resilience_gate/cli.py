@@ -1,37 +1,71 @@
-"""Command-line interface for ResilienceGate.
-
-The CLI provides a simple entry point for running the prototype against
-telemetry and dependency inputs and displaying the resulting deployment
-gate decision.
-"""
+"""Command-line interface for the ResilienceGate prototype."""
 
 import argparse
 
+from resilience_gate.detection.baseline import build_baseline, detect_anomalies
+from resilience_gate.explain.narrate import narrate
+from resilience_gate.policy.engine import evaluate
+from resilience_gate.telemetry.ingest import load_json
 
-def build_parser() -> argparse.ArgumentParser:
-    """Create and return the ResilienceGate command-line parser."""
-    parser = argparse.ArgumentParser(
-        prog="resilience-gate",
-        description="Evaluate operational and supply-chain signals before deployment.",
+
+def run_gate(baseline_path: str, current_path: str) -> int:
+    """Run the operational-resilience deployment gate."""
+    baseline_points = load_json(baseline_path)
+    current_points = load_json(current_path)
+
+    baseline_mean, baseline_std = build_baseline(baseline_points)
+
+    anomalies = detect_anomalies(
+        current_points,
+        baseline_mean,
+        baseline_std,
     )
 
-    parser.add_argument(
-        "--metrics",
-        help="Path to a JSON or CSV telemetry file.",
+    decision = evaluate(
+        anomalies=anomalies,
+        findings=[],
     )
 
-    parser.add_argument(
-        "--policy",
-        default="policy.yaml",
-        help="Path to the deployment policy file.",
-    )
+    explanation = narrate(decision)
 
-    return parser
+    print(f"Decision: {decision.decision.value.upper()}")
+    print(explanation)
+
+    if decision.decision.value == "block":
+        return 2
+
+    if decision.decision.value == "warn":
+        return 1
+
+    return 0
 
 
 def main() -> None:
-    """Run the ResilienceGate command-line interface."""
-    raise NotImplementedError
+    """Run ResilienceGate from the command line."""
+    parser = argparse.ArgumentParser(
+        description="Evaluate operational telemetry before deployment."
+    )
+
+    parser.add_argument(
+        "--baseline",
+        required=True,
+        help="Path to baseline telemetry JSON.",
+    )
+
+    parser.add_argument(
+        "--current",
+        required=True,
+        help="Path to current telemetry JSON.",
+    )
+
+    args = parser.parse_args()
+
+    exit_code = run_gate(
+        baseline_path=args.baseline,
+        current_path=args.current,
+    )
+
+    raise SystemExit(exit_code)
 
 
 if __name__ == "__main__":
