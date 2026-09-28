@@ -14,7 +14,21 @@ def generate_normal(
     count: int = 100,
 ) -> list[MetricPoint]:
     """Generate a stable synthetic telemetry series."""
-    raise NotImplementedError
+    start_time = datetime.now()
+    points = []
+
+    for index in range(count):
+        points.append(
+            MetricPoint(
+                timestamp=start_time + timedelta(minutes=index),
+                service=service,
+                metric="latency_ms",
+                value=120.0 + (index % 5),
+                unit="ms",
+            )
+        )
+
+    return points
 
 
 def generate_incident(
@@ -22,4 +36,11 @@ def generate_incident(
     count: int = 100,
 ) -> list[MetricPoint]:
     """Generate synthetic telemetry containing a simulated service incident."""
-    raise NotImplementedError
+    points = generate_normal(service=service, count=count)
+
+    incident_start = int(count * 0.8)
+
+    for index in range(incident_start, count):
+        points[index].value += 300.0
+
+    return points
