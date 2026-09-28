@@ -84,3 +84,28 @@ sequenceDiagram
 ```
 
 The operator branch is deliberate. The system refuses a deployment and explains itself; it does not act unilaterally without recourse. This is the human-oversight boundary described in the XR-ACD framework.
+
+## 4. Module Dependencies
+
+```mermaid
+flowchart TD
+    CLI["cli.py"] --> TEL["telemetry"]
+    CLI --> DET["detection"]
+    CLI --> SC["supplychain"]
+    CLI --> POL["policy"]
+    CLI --> REP["report"]
+
+    TEL --> MOD["models.py"]
+    DET --> MOD
+    SC --> MOD
+    POL --> MOD
+
+    DET --> STO["store.py"]
+    TEL --> STO
+
+    POL --> EXP["explain"]
+    REP --> EXP
+    EXP --> MOD
+```
+
+Every module depends on the shared data model and nothing else depends on the CLI. The detector can be replaced without touching the policy engine; the policy engine can be replaced without touching ingestion. That separation is what makes the roadmap in the README credible rather than aspirational.
