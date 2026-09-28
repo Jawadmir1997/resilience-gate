@@ -1,20 +1,60 @@
-"""Baseline anomaly detection for ResilienceGate.
+"""Baseline anomaly detection for ResilienceGate telemetry."""
 
-This module defines the interface for establishing a statistical baseline
-from normalized telemetry and identifying meaningful deviations from it.
-"""
+from statistics import mean, pstdev
 
-from resilience_gate.models import Anomaly, MetricPoint
+from resilience_gate.models import Anomaly, MetricPoint, Severity
 
 
-def calculate_baseline(points: list[MetricPoint]) -> dict[str, float]:
-    """Calculate baseline statistics from normalized telemetry."""
-    raise NotImplementedError
+def build_baseline(points: list[MetricPoint]) -> tuple[float, float]:
+    """Calculate the mean and standard deviation of telemetry values."""
+    if not points:
+        raise ValueError("Cannot build a baseline from empty telemetry.")
+
+    values = [point.value for point in points]
+    baseline_mean = mean(values)
+    baseline_std = pstdev(values)
+
+    return baseline_mean, baseline_std
 
 
 def detect_anomalies(
     points: list[MetricPoint],
-    baseline: dict[str, float],
+    baseline_mean: float,
+    baseline_std: float,
 ) -> list[Anomaly]:
-    """Compare telemetry against a baseline and return detected anomalies."""
-    raise NotImplementedError
+    """Detect telemetry points that significantly deviate from the baseline."""
+    anomalies = []
+
+    if baseline_std == 0:
+        return anomalies
+
+    for point in points:
+        deviation_sigma = abs(point.value - baseline_mean) / baseline_std
+
+        if deviation_sigma >= 4.0:
+            severity = Severity.CRITICAL
+        elif deviation_sigma >= 3.0:
+            severity = Severity.HIGH
+        elif deviation_sigma >= 2.0:
+            severity = Severity.MEDIUM
+        else:
+            continue
+
+        anomalies.append(
+            Anomaly(
+                timestamp=point.timestamp,
+                service=point.service,
+                metric=point.metric,
+                observed=point.value,
+                baseline=baseline_mean,
+                deviation_sigma=deviation_sigma,
+                score=deviation_sigma,
+                severity=severity,
+                explanation=(
+                    f"{point.metric} for {point.service} deviated "
+                    f"{deviation_sigma:.2f} standard deviations from baseline."
+                ),
+            )
+        )
+
+    return anomalies
